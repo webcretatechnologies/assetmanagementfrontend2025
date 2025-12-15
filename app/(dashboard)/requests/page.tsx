@@ -43,6 +43,7 @@ import { isInventoryOperator, isBranchManager, canViewAllRequests, isEmployee } 
 import { useAutoSelect } from "@/components/ui/auto-select";
 import { CreateRequestDialog } from "@/components/requests/create-request-dialog";
 import { ViewRequestDialog } from "@/components/requests/view-request-dialog";
+import { TableSkeleton } from "@/components/ui/table-skeleton";
 import type { AssetRequest } from "@/lib/types";
 
 const getStatusColor = (status: string) => {
@@ -318,9 +319,7 @@ export default function RequestQueuePage() {
                                 <p className="text-muted-foreground">Select an organization to view requests</p>
                             </div>
                         ) : isLoading ? (
-                            <div className="flex items-center justify-center py-10">
-                                <div className="text-muted-foreground">Loading...</div>
-                            </div>
+                            <TableSkeleton rows={5} columns={7} />
                         ) : displayRequests.length === 0 ? (
                             <div className="flex flex-col items-center justify-center py-10 text-center">
                                 <ClipboardCheck className="h-12 w-12 text-muted-foreground/50 mb-4" />
