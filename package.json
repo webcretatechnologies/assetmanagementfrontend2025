@@ -1,6 +1,7 @@
 {
   "name": "inventory-app",
   "version": "0.1.0",
+  "Dev": "DEV Branch created for testing",
   "private": true,
   "scripts": {
     "dev": "next dev",
