@@ -42,6 +42,7 @@ import { ProtectedPage, PermissionGate } from "@/components/rbac";
 import { canUpdate, canDelete } from "@/lib/rbac";
 import { useAutoSelect } from "@/components/ui/auto-select";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { TableSkeleton } from "@/components/ui/table-skeleton";
 import type { Category } from "@/lib/types";
 
 const getStatusColor = (status: string) => {
@@ -196,9 +197,7 @@ export default function CategoriesPage() {
                                 <p className="text-muted-foreground">Select an organization to view categories</p>
                             </div>
                         ) : isLoading ? (
-                            <div className="flex items-center justify-center py-10">
-                                <div className="text-muted-foreground">Loading...</div>
-                            </div>
+                            <TableSkeleton rows={5} columns={5} />
                         ) : categoryList.length === 0 ? (
                             <div className="flex flex-col items-center justify-center py-10 text-center">
                                 <Tags className="h-12 w-12 text-muted-foreground/50 mb-4" />

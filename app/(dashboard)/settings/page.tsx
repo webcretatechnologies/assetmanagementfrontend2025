@@ -158,10 +158,9 @@ export default function SettingsPage() {
         }
     }, [orgSettings]);
 
-    // Handle errors
+    // Clear errors when they occur (toast is shown by API client interceptor)
     useEffect(() => {
         if (error) {
-            toast.error(error);
             dispatch(clearSettingsError());
         }
     }, [error, dispatch]);

@@ -117,6 +117,13 @@ const authSlice = createSlice({
             state.error = null;
             clearLocalStorage();
         },
+        setUser: (state, action: PayloadAction<User>) => {
+            state.user = action.payload;
+            // Update localStorage with new user data
+            if (typeof window !== "undefined" && state.access_token) {
+                saveToLocalStorage(action.payload, state.access_token);
+            }
+        },
         clearError: (state) => {
             state.error = null;
         },
@@ -172,7 +179,7 @@ const authSlice = createSlice({
     },
 });
 
-export const { setCredentials, clearCredentials, clearError, hydrateAuth } =
+export const { setCredentials, clearCredentials, clearError, hydrateAuth, setUser } =
     authSlice.actions;
 export default authSlice.reducer;
 

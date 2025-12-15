@@ -45,6 +45,7 @@ import { ProtectedPage, PermissionGate } from "@/components/rbac";
 import { isBranchManager, canUpdate, canDelete } from "@/lib/rbac";
 import { useAutoSelectWithAll } from "@/components/ui/auto-select";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { TableSkeleton } from "@/components/ui/table-skeleton";
 import type { Branch } from "@/lib/types";
 
 const getStatusColor = (status: string) => {
@@ -203,9 +204,7 @@ export default function BranchesPage() {
                     </CardHeader>
                     <CardContent>
                         {isLoading ? (
-                            <div className="flex items-center justify-center py-10">
-                                <div className="text-muted-foreground">Loading...</div>
-                            </div>
+                            <TableSkeleton rows={5} columns={5} />
                         ) : visibleBranches.length === 0 ? (
                             <div className="flex flex-col items-center justify-center py-10 text-center">
                                 <GitBranch className="h-12 w-12 text-muted-foreground/50 mb-4" />

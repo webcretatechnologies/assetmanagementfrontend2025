@@ -112,3 +112,15 @@ export async function deleteUser(id: string): Promise<User> {
     const res = await api.delete<User>(`/users/${id}`);
     return res.data;
 }
+
+export interface UpdateProfileInput {
+    firstName?: string;
+    lastName?: string;
+    currentPassword?: string;
+    newPassword?: string;
+}
+
+export async function updateProfile(data: UpdateProfileInput): Promise<User> {
+    const res = await api.patch<User>("/users/profile", data);
+    return res.data;
+}

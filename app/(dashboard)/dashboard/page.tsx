@@ -28,6 +28,7 @@ import {
     CheckCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { DashboardSkeleton } from "@/components/ui/card-skeleton";
 
 // Icon map for dynamic icon rendering
 const iconMap: Record<string, React.ElementType> = {
@@ -111,9 +112,7 @@ export default function DashboardPage() {
             </div>
 
             {isLoading ? (
-                <div className="flex items-center justify-center py-20">
-                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-                </div>
+                <DashboardSkeleton />
             ) : (
                 <>
                     {/* Metrics Grid */}
