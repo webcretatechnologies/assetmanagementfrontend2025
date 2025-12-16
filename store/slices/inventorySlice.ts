@@ -3,6 +3,9 @@ import {
     getInventory,
     addInventory as addInventoryApi,
     transferInventory as transferInventoryApi,
+    importInventory as importInventoryApi,
+    getRecentImports,
+    undoImport,
 } from "@/lib/api/inventory";
 import type {
     InventoryItem,
@@ -10,7 +13,8 @@ import type {
     AddInventoryInput,
     TransferInventoryInput,
     GetInventoryParams,
-    TransferResult,
+    ImportInventoryResult,
+    ImportRecord,
 } from "@/lib/types";
 
 interface InventoryState {
@@ -24,6 +28,16 @@ interface InventoryState {
         limit: number;
         totalPages: number;
     };
+    // Import state
+    isImporting: boolean;
+    importResult: ImportInventoryResult | null;
+    importError: string | null;
+    // Export state
+    isExporting: boolean;
+    // Import history state
+    recentImports: ImportRecord[];
+    isLoadingHistory: boolean;
+    isUndoing: boolean;
 }
 
 const initialState: InventoryState = {
@@ -32,6 +46,16 @@ const initialState: InventoryState = {
     isLoading: false,
     error: null,
     meta: { total: 0, page: 1, limit: 20, totalPages: 0 },
+    // Import state
+    isImporting: false,
+    importResult: null,
+    importError: null,
+    // Export state
+    isExporting: false,
+    // Import history state
+    recentImports: [],
+    isLoadingHistory: false,
+    isUndoing: false,
 };
 
 export const fetchInventory = createAsyncThunk(
@@ -73,6 +97,51 @@ export const transferInventory = createAsyncThunk(
     }
 );
 
+export const importInventoryThunk = createAsyncThunk(
+    "inventory/import",
+    async (
+        { file, organizationId, branchId }: { file: File; organizationId: string; branchId?: string },
+        { rejectWithValue }
+    ) => {
+        try {
+            return await importInventoryApi(file, organizationId, branchId);
+        } catch (error) {
+            return rejectWithValue(
+                error instanceof Error ? error.message : "Failed to import inventory"
+            );
+        }
+    }
+);
+
+export const fetchRecentImportsThunk = createAsyncThunk(
+    "inventory/fetchRecentImports",
+    async (organizationId: string | undefined, { rejectWithValue }) => {
+        try {
+            return await getRecentImports(organizationId);
+        } catch (error) {
+            return rejectWithValue(
+                error instanceof Error ? error.message : "Failed to fetch recent imports"
+            );
+        }
+    }
+);
+
+export const undoImportThunk = createAsyncThunk(
+    "inventory/undoImport",
+    async (
+        { importId, organizationId }: { importId: string; organizationId?: string },
+        { rejectWithValue }
+    ) => {
+        try {
+            return await undoImport(importId, organizationId);
+        } catch (error) {
+            return rejectWithValue(
+                error instanceof Error ? error.message : "Failed to undo import"
+            );
+        }
+    }
+);
+
 const inventorySlice = createSlice({
     name: "inventory",
     initialState,
@@ -86,6 +155,13 @@ const inventorySlice = createSlice({
         clearInventory: (state) => {
             state.items = [];
             state.meta = initialState.meta;
+        },
+        clearImportResult: (state) => {
+            state.importResult = null;
+            state.importError = null;
+        },
+        setIsExporting: (state, action: PayloadAction<boolean>) => {
+            state.isExporting = action.payload;
         },
     },
     extraReducers: (builder) => {
@@ -129,9 +205,51 @@ const inventorySlice = createSlice({
             .addCase(transferInventory.rejected, (state, action) => {
                 state.isLoading = false;
                 state.error = action.payload as string;
+            })
+            // Import cases
+            .addCase(importInventoryThunk.pending, (state) => {
+                state.isImporting = true;
+                state.importError = null;
+                state.importResult = null;
+            })
+            .addCase(importInventoryThunk.fulfilled, (state, action: PayloadAction<ImportInventoryResult>) => {
+                state.isImporting = false;
+                state.importResult = action.payload;
+            })
+            .addCase(importInventoryThunk.rejected, (state, action) => {
+                state.isImporting = false;
+                state.importError = action.payload as string;
+            })
+            // Recent imports cases
+            .addCase(fetchRecentImportsThunk.pending, (state) => {
+                state.isLoadingHistory = true;
+            })
+            .addCase(fetchRecentImportsThunk.fulfilled, (state, action: PayloadAction<ImportRecord[]>) => {
+                state.isLoadingHistory = false;
+                state.recentImports = action.payload;
+            })
+            .addCase(fetchRecentImportsThunk.rejected, (state) => {
+                state.isLoadingHistory = false;
+            })
+            // Undo import cases
+            .addCase(undoImportThunk.pending, (state) => {
+                state.isUndoing = true;
+            })
+            .addCase(undoImportThunk.fulfilled, (state) => {
+                state.isUndoing = false;
+            })
+            .addCase(undoImportThunk.rejected, (state) => {
+                state.isUndoing = false;
             });
     },
 });
 
-export const { setSelectedInventoryItem, clearInventoryError, clearInventory } = inventorySlice.actions;
+export const {
+    setSelectedInventoryItem,
+    clearInventoryError,
+    clearInventory,
+    clearImportResult,
+    setIsExporting,
+} = inventorySlice.actions;
 export default inventorySlice.reducer;
+

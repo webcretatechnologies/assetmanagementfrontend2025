@@ -69,3 +69,21 @@ export async function deleteProduct(id: string, organizationId: string): Promise
     const res = await api.delete<Product>(`/products/${id}?organizationId=${organizationId}`);
     return res.data;
 }
+
+export interface ProductLookupResult {
+    productType: "ASSET" | "CONSUMABLE";
+}
+
+export async function lookupProduct(
+    sku: string,
+    organizationId: string,
+    branchId: string
+): Promise<ProductLookupResult> {
+    const searchParams = new URLSearchParams();
+    searchParams.set("sku", sku);
+    searchParams.set("organizationId", organizationId);
+    searchParams.set("branchId", branchId);
+
+    const res = await api.get<ProductLookupResult>(`/products/lookup?${searchParams.toString()}`);
+    return res.data;
+}
