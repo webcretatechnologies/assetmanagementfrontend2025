@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Warehouse, Plus, ArrowRightLeft, Search } from "lucide-react";
+import { Warehouse, Plus, ArrowRightLeft, Search, Upload, Download, Loader2, History, RotateCcw } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -37,7 +37,13 @@ import { isInventoryOperator, isBranchManager, isOrgAdmin, canTransferInventory 
 import { useAutoSelect } from "@/components/ui/auto-select";
 import { AddInventoryDialog } from "@/components/inventory/add-inventory-dialog";
 import { TransferInventoryDialog } from "@/components/inventory/transfer-inventory-dialog";
-import type { InventoryStatus } from "@/lib/types";
+import { ImportInventoryDialog } from "@/components/inventory/import-inventory-dialog";
+import { ImportHistoryDialog } from "@/components/inventory/import-history-dialog";
+import { RestoreInventoryDialog } from "@/components/inventory/restore-inventory-dialog";
+import { exportInventory } from "@/lib/api/inventory";
+import { setIsExporting } from "@/store/slices/inventorySlice";
+import type { InventoryStatus, InventoryItem } from "@/lib/types";
+import { toast } from "sonner";
 
 const getStatusColor = (status: InventoryStatus) => {
     switch (status) {
@@ -51,6 +57,8 @@ const getStatusColor = (status: InventoryStatus) => {
             return "bg-red-500/10 text-red-500 border-red-500/20";
         case "DISPOSED":
             return "bg-gray-500/10 text-gray-500 border-gray-500/20";
+        case "WRITTEN_OFF":
+            return "bg-purple-500/10 text-purple-500 border-purple-500/20";
         default:
             return "bg-gray-500/10 text-gray-500 border-gray-500/20";
     }
@@ -58,7 +66,7 @@ const getStatusColor = (status: InventoryStatus) => {
 
 export default function InventoryPage() {
     const dispatch = useAppDispatch();
-    const { items, isLoading, meta } = useAppSelector((state) => state.inventory);
+    const { items, isLoading, meta, isExporting } = useAppSelector((state) => state.inventory);
     const { organizations } = useAppSelector((state) => state.organizations);
     const { branches } = useAppSelector((state) => state.branches);
     const { user } = useAppSelector((state) => state.auth);
@@ -67,6 +75,9 @@ export default function InventoryPage() {
     const [statusFilter, setStatusFilter] = useState<string>("all");
     const [searchTerm, setSearchTerm] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
+    // Restore dialog state
+    const [restoreDialogOpen, setRestoreDialogOpen] = useState(false);
+    const [itemToRestore, setItemToRestore] = useState<InventoryItem | null>(null);
 
     const userRole = user?.role;
     const isScopedUser = isInventoryOperator(userRole) || isBranchManager(userRole);
@@ -166,7 +177,7 @@ export default function InventoryPage() {
                             </p>
                         </div>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 flex-wrap">
                         {selectedOrgId && (
                             <>
                                 <AddInventoryDialog
@@ -180,6 +191,44 @@ export default function InventoryPage() {
                                         </Button>
                                     }
                                 />
+                                <ImportInventoryDialog
+                                    defaultOrgId={selectedOrgId}
+                                    defaultBranchId={selectedBranchId !== "all" ? selectedBranchId : undefined}
+                                    onSuccess={refreshInventory}
+                                    trigger={
+                                        <Button variant="outline">
+                                            <Upload className="mr-2 h-4 w-4" />
+                                            Import
+                                        </Button>
+                                    }
+                                />
+                                <Button
+                                    variant="outline"
+                                    onClick={async () => {
+                                        dispatch(setIsExporting(true));
+                                        try {
+                                            await exportInventory({
+                                                organizationId: selectedOrgId,
+                                                branchId: selectedBranchId !== "all" ? selectedBranchId : undefined,
+                                                status: statusFilter !== "all" ? (statusFilter as InventoryStatus) : undefined,
+                                                search: searchTerm || undefined,
+                                            });
+                                            toast.success("Inventory exported successfully");
+                                        } catch {
+                                            // Error handled by API interceptor
+                                        } finally {
+                                            dispatch(setIsExporting(false));
+                                        }
+                                    }}
+                                    disabled={isExporting}
+                                >
+                                    {isExporting ? (
+                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    ) : (
+                                        <Download className="mr-2 h-4 w-4" />
+                                    )}
+                                    Export
+                                </Button>
                                 {canTransferInventory(userRole) && (
                                     <TransferInventoryDialog
                                         organizationId={selectedOrgId}
@@ -192,6 +241,15 @@ export default function InventoryPage() {
                                         }
                                     />
                                 )}
+                                <ImportHistoryDialog
+                                    organizationId={selectedOrgId}
+                                    onRefresh={refreshInventory}
+                                    trigger={
+                                        <Button variant="outline" size="icon" title="Import History">
+                                            <History className="h-4 w-4" />
+                                        </Button>
+                                    }
+                                />
                             </>
                         )}
                     </div>
@@ -253,6 +311,7 @@ export default function InventoryPage() {
                                         <SelectItem value="IN_TRANSIT">In Transit</SelectItem>
                                         <SelectItem value="DAMAGED">Damaged</SelectItem>
                                         <SelectItem value="DISPOSED">Disposed</SelectItem>
+                                        <SelectItem value="WRITTEN_OFF">Written Off</SelectItem>
                                     </SelectContent>
                                 </Select>
                                 <div className="relative flex-1 min-w-[200px]">
@@ -280,100 +339,131 @@ export default function InventoryPage() {
                             <div className="text-center py-12 text-muted-foreground">
                                 No inventory items found
                             </div>
-                        ) : (
-                            <>
-                                <div className="overflow-x-auto">
-                                    <Table>
-                                        <TableHeader>
-                                            <TableRow>
-                                                <TableHead>Product</TableHead>
-                                                <TableHead>Branch</TableHead>
-                                                <TableHead>Serial Number</TableHead>
-                                                <TableHead className="text-right">Quantity</TableHead>
-                                                <TableHead>Warranty Expiry</TableHead>
-                                                <TableHead>Status</TableHead>
-                                            </TableRow>
-                                        </TableHeader>
-                                        <TableBody>
-                                            {itemList.map((item) => (
-                                                <TableRow key={item.id}>
-                                                    <TableCell>
-                                                        <div className="font-medium">
-                                                            {item.product?.name || "Unknown Product"}
-                                                        </div>
-                                                        <div className="text-xs text-muted-foreground">
-                                                            {item.product?.sku}
-                                                        </div>
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        {item.branch?.name || "Unknown Branch"}
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        {item.serialNumber || "-"}
-                                                    </TableCell>
-                                                    <TableCell className="text-right font-medium">
-                                                        {item.quantity}
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        {item.warrantyExpiryDate ? (
-                                                            <span
-                                                                className={
-                                                                    new Date(item.warrantyExpiryDate) < new Date()
-                                                                        ? "text-red-600 font-medium"
-                                                                        : new Date(item.warrantyExpiryDate) < new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
-                                                                            ? "text-yellow-600"
-                                                                            : ""
-                                                                }
-                                                            >
-                                                                {new Date(item.warrantyExpiryDate).toLocaleDateString()}
-                                                            </span>
-                                                        ) : (
-                                                            "-"
-                                                        )}
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        <Badge
-                                                            variant="outline"
-                                                            className={getStatusColor(item.status)}
-                                                        >
-                                                            {item.status}
-                                                        </Badge>
-                                                    </TableCell>
+                        ) : (() => {
+                            const hasWrittenOffItems = itemList.some(item => item.status === "WRITTEN_OFF");
+                            return (
+                                <>
+                                    <div className="overflow-x-auto">
+                                        <Table>
+                                            <TableHeader>
+                                                <TableRow>
+                                                    <TableHead>Product</TableHead>
+                                                    <TableHead>Branch</TableHead>
+                                                    <TableHead>Serial Number</TableHead>
+                                                    <TableHead className="text-right">Quantity</TableHead>
+                                                    <TableHead>Warranty Expiry</TableHead>
+                                                    <TableHead>Status</TableHead>
+                                                    {hasWrittenOffItems && (
+                                                        <TableHead className="text-right">Actions</TableHead>
+                                                    )}
                                                 </TableRow>
-                                            ))}
-                                        </TableBody>
-                                    </Table>
-                                </div>
-                                {meta.totalPages > 1 && (
-                                    <div className="flex items-center justify-between mt-4">
-                                        <p className="text-sm text-muted-foreground">
-                                            Showing {itemList.length} of {meta.total} items
-                                        </p>
-                                        <div className="flex gap-2">
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                                                disabled={currentPage === 1}
-                                            >
-                                                Previous
-                                            </Button>
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                onClick={() => setCurrentPage((p) => Math.min(meta.totalPages, p + 1))}
-                                                disabled={currentPage === meta.totalPages}
-                                            >
-                                                Next
-                                            </Button>
-                                        </div>
+                                            </TableHeader>
+                                            <TableBody>
+                                                {itemList.map((item, index) => (
+                                                    <TableRow key={`${item.id}-${index}`}>
+                                                        <TableCell>
+                                                            <div className="font-medium">
+                                                                {item.product?.name || "Unknown Product"}
+                                                            </div>
+                                                            <div className="text-xs text-muted-foreground">
+                                                                {item.product?.sku}
+                                                            </div>
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            {item.branch?.name || "Unknown Branch"}
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            {item.serialNumber || "-"}
+                                                        </TableCell>
+                                                        <TableCell className="text-right font-medium">
+                                                            {item.quantity}
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            {item.warrantyExpiryDate ? (
+                                                                <span
+                                                                    className={
+                                                                        new Date(item.warrantyExpiryDate) < new Date()
+                                                                            ? "text-red-600 font-medium"
+                                                                            : new Date(item.warrantyExpiryDate) < new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+                                                                                ? "text-yellow-600"
+                                                                                : ""
+                                                                    }
+                                                                >
+                                                                    {new Date(item.warrantyExpiryDate).toLocaleDateString()}
+                                                                </span>
+                                                            ) : (
+                                                                "-"
+                                                            )}
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            <Badge
+                                                                variant="outline"
+                                                                className={getStatusColor(item.status)}
+                                                            >
+                                                                {item.status === "WRITTEN_OFF" ? "Written Off" : item.status}
+                                                            </Badge>
+                                                        </TableCell>
+                                                        {hasWrittenOffItems && (
+                                                            <TableCell className="text-right">
+                                                                {item.status === "WRITTEN_OFF" && (
+                                                                    <Button
+                                                                        variant="outline"
+                                                                        size="sm"
+                                                                        onClick={() => {
+                                                                            setItemToRestore(item);
+                                                                            setRestoreDialogOpen(true);
+                                                                        }}
+                                                                    >
+                                                                        <RotateCcw className="mr-1 h-4 w-4" />
+                                                                        Restore
+                                                                    </Button>
+                                                                )}
+                                                            </TableCell>
+                                                        )}
+                                                    </TableRow>
+                                                ))}
+                                            </TableBody>
+                                        </Table>
                                     </div>
-                                )}
-                            </>
-                        )}
+                                    {meta.totalPages > 1 && (
+                                        <div className="flex items-center justify-between mt-4">
+                                            <p className="text-sm text-muted-foreground">
+                                                Showing {itemList.length} of {meta.total} items
+                                            </p>
+                                            <div className="flex gap-2">
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                                                    disabled={currentPage === 1}
+                                                >
+                                                    Previous
+                                                </Button>
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    onClick={() => setCurrentPage((p) => Math.min(meta.totalPages, p + 1))}
+                                                    disabled={currentPage === meta.totalPages}
+                                                >
+                                                    Next
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    )}
+                                </>
+                            );
+                        })()}
                     </CardContent>
                 </Card>
             </div>
+
+            {/* Restore Dialog */}
+            <RestoreInventoryDialog
+                item={itemToRestore}
+                open={restoreDialogOpen}
+                onOpenChange={setRestoreDialogOpen}
+                onSuccess={refreshInventory}
+            />
         </ProtectedPage>
     );
 }

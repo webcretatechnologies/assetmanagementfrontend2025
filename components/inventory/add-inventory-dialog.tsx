@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useForm } from "react-hook-form";
-import { Loader2 } from "lucide-react";
+import { Loader2, FileText } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -34,6 +34,8 @@ import type { AddInventoryInput, ServiceFrequency } from "@/lib/types";
 
 const serviceFrequencies: { value: ServiceFrequency; label: string }[] = [
     { value: "NONE", label: "None" },
+    { value: "DAILY", label: "Daily" },
+    { value: "WEEKLY", label: "Weekly" },
     { value: "MONTHLY", label: "Monthly" },
     { value: "QUARTERLY", label: "Quarterly" },
     { value: "YEARLY", label: "Yearly" },
@@ -62,6 +64,10 @@ export function AddInventoryDialog({
     const [hasWarranty, setHasWarranty] = useState(false);
     const [hasGuarantee, setHasGuarantee] = useState(false);
     const [purchaseDate, setPurchaseDate] = useState("");
+    // Invoice state
+    const [hasInvoice, setHasInvoice] = useState(false);
+    const [invoiceFile, setInvoiceFile] = useState<File | null>(null);
+    const invoiceFileRef = useRef<HTMLInputElement>(null);
 
     const dispatch = useAppDispatch();
     const { isLoading } = useAppSelector((state) => state.inventory);
@@ -112,6 +118,10 @@ export function AddInventoryDialog({
         warrantyProvider: string;
         warrantyDurationMonths: number;
         guaranteeDurationMonths: number;
+        invoiceNumber: string;
+        invoiceDate: string;
+        vendorName: string;
+        currency: string;
     }>({
         defaultValues: {
             quantity: 1,
@@ -120,6 +130,10 @@ export function AddInventoryDialog({
             warrantyProvider: "",
             warrantyDurationMonths: 12,
             guaranteeDurationMonths: 12,
+            invoiceNumber: "",
+            invoiceDate: "",
+            vendorName: "",
+            currency: "",
         },
     });
 
@@ -134,6 +148,10 @@ export function AddInventoryDialog({
         warrantyProvider: string;
         warrantyDurationMonths: number;
         guaranteeDurationMonths: number;
+        invoiceNumber: string;
+        invoiceDate: string;
+        vendorName: string;
+        currency: string;
     }) => {
         if (!selectedOrgId || !selectedBranchId || !selectedProductId) return;
 
@@ -159,6 +177,12 @@ export function AddInventoryDialog({
             // Guarantee fields
             hasGuarantee: hasGuarantee,
             guaranteeDurationMonths: hasGuarantee ? data.guaranteeDurationMonths : undefined,
+            // Invoice fields
+            hasInvoice: hasInvoice,
+            invoiceNumber: hasInvoice ? data.invoiceNumber : undefined,
+            invoiceDate: hasInvoice ? data.invoiceDate : undefined,
+            vendorName: hasInvoice ? data.vendorName : undefined,
+            currency: hasInvoice ? data.currency : undefined,
         };
 
         const result = await dispatch(addInventory(payload));
@@ -170,6 +194,11 @@ export function AddInventoryDialog({
             setHasWarranty(false);
             setHasGuarantee(false);
             setPurchaseDate("");
+            setHasInvoice(false);
+            setInvoiceFile(null);
+            if (invoiceFileRef.current) {
+                invoiceFileRef.current.value = "";
+            }
             setOpen(false);
             onSuccess?.();
         }
@@ -424,6 +453,103 @@ export function AddInventoryDialog({
                                         placeholder="12"
                                         {...register("guaranteeDurationMonths", { valueAsNumber: true })}
                                     />
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Invoice Options */}
+                        <div className="space-y-3 p-3 border rounded-lg">
+                            <div className="flex items-center gap-2">
+                                <input
+                                    type="checkbox"
+                                    id="hasInvoice"
+                                    checked={hasInvoice}
+                                    onChange={(e) => setHasInvoice(e.target.checked)}
+                                    className="h-4 w-4"
+                                />
+                                <Label htmlFor="hasInvoice" className="font-normal">
+                                    Has Invoice
+                                </Label>
+                            </div>
+                            {hasInvoice && (
+                                <div className="grid gap-4">
+                                    <div className="grid gap-4 sm:grid-cols-2">
+                                        <div className="space-y-2">
+                                            <Label htmlFor="invoiceNumber">Invoice Number</Label>
+                                            <Input
+                                                id="invoiceNumber"
+                                                placeholder="INV-001"
+                                                {...register("invoiceNumber")}
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="invoiceDate">Invoice Date</Label>
+                                            <Input
+                                                id="invoiceDate"
+                                                type="date"
+                                                {...register("invoiceDate")}
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="grid gap-4 sm:grid-cols-2">
+                                        <div className="space-y-2">
+                                            <Label htmlFor="vendorName">Vendor Name</Label>
+                                            <Input
+                                                id="vendorName"
+                                                placeholder="Vendor Inc."
+                                                {...register("vendorName")}
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="currency">Currency</Label>
+                                            <Input
+                                                id="currency"
+                                                placeholder="USD"
+                                                {...register("currency")}
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label>Invoice Attachment</Label>
+                                        <div className="flex items-center gap-2">
+                                            <input
+                                                ref={invoiceFileRef}
+                                                type="file"
+                                                accept=".pdf,.jpg,.jpeg,.png"
+                                                onChange={(e) => setInvoiceFile(e.target.files?.[0] || null)}
+                                                className="hidden"
+                                                id="invoice-file"
+                                            />
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => invoiceFileRef.current?.click()}
+                                                className="flex-1"
+                                            >
+                                                <FileText className="mr-2 h-4 w-4" />
+                                                {invoiceFile ? invoiceFile.name : "Choose file"}
+                                            </Button>
+                                            {invoiceFile && (
+                                                <Button
+                                                    type="button"
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    onClick={() => {
+                                                        setInvoiceFile(null);
+                                                        if (invoiceFileRef.current) {
+                                                            invoiceFileRef.current.value = "";
+                                                        }
+                                                    }}
+                                                >
+                                                    Remove
+                                                </Button>
+                                            )}
+                                        </div>
+                                        <p className="text-xs text-muted-foreground">
+                                            Accepts PDF, JPG, PNG (Max 5MB)
+                                        </p>
+                                    </div>
                                 </div>
                             )}
                         </div>

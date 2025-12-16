@@ -127,7 +127,7 @@ export interface UpdateCategoryInput {
 
 // Product Types
 export type ProductType = "CONSUMABLE" | "ASSET";
-export type ServiceFrequency = "NONE" | "MONTHLY" | "QUARTERLY" | "YEARLY";
+export type ServiceFrequency = "NONE" | "DAILY" | "WEEKLY" | "MONTHLY" | "QUARTERLY" | "YEARLY";
 export type ProductStatus = "ACTIVE" | "INACTIVE";
 
 export interface Product {
@@ -407,7 +407,7 @@ export interface LoginResponse {
 }
 
 // Inventory Types
-export type InventoryStatus = "AVAILABLE" | "ASSIGNED" | "IN_TRANSIT" | "DAMAGED" | "DISPOSED";
+export type InventoryStatus = "AVAILABLE" | "ASSIGNED" | "IN_TRANSIT" | "DAMAGED" | "DISPOSED" | "WRITTEN_OFF";
 
 export interface InventoryItem {
     id: string;
@@ -456,6 +456,12 @@ export interface AddInventoryInput {
     hasGuarantee?: boolean;
     guaranteeDurationMonths?: number;
     guaranteeExpiryDate?: string;
+    // Invoice fields
+    hasInvoice?: boolean;
+    invoiceNumber?: string;
+    invoiceDate?: string;
+    vendorName?: string;
+    currency?: string;
 }
 
 export interface TransferInventoryInput {
@@ -557,4 +563,32 @@ export interface UpdateOrgSmtpSettingsInput {
     smtpPassword?: string;
     smtpSecure?: boolean;
     smtpFromEmail?: string;
+}
+
+// Inventory Import/Export Types
+export interface ImportInventoryResult {
+    successCount: number;
+    errorCount: number;
+    errors: Array<{ row: number; error: string; sku: string }>;
+}
+
+export interface ExportInventoryParams {
+    organizationId: string;
+    branchId?: string;
+    status?: InventoryStatus;
+    search?: string;
+}
+
+export type ImportStatus = "PENDING" | "PROCESSING" | "COMPLETED" | "FAILED" | "REVERTED";
+
+export interface ImportRecord {
+    id: string;
+    filename: string;
+    status: ImportStatus;
+    createdAt: string;
+    transactions: number;
+}
+
+export interface UndoImportResult {
+    message: string;
 }
