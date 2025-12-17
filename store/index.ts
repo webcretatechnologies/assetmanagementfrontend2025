@@ -10,6 +10,8 @@ import requestReducer from "./slices/requestSlice";
 import inventoryReducer from "./slices/inventorySlice";
 import dashboardReducer from "./slices/dashboardSlice";
 import settingsReducer from "./slices/settingsSlice";
+import vendorReducer from "./slices/vendorSlice";
+import serviceLogReducer from "./slices/serviceLogSlice";
 
 export const store = configureStore({
   reducer: {
@@ -24,6 +26,8 @@ export const store = configureStore({
     inventory: inventoryReducer,
     dashboard: dashboardReducer,
     settings: settingsReducer,
+    vendors: vendorReducer,
+    serviceLogs: serviceLogReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

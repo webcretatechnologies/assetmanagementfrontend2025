@@ -11,6 +11,8 @@ import {
     ClipboardCheck,
     User,
     Settings,
+    Truck,
+    Wrench,
     type LucideIcon,
 } from "lucide-react";
 
@@ -43,6 +45,8 @@ export const MODULES = {
     INVENTORY: "INVENTORY", // Stock Management
     ASSIGNMENTS: "ASSIGNMENTS", // Asset Assignments
     REQUESTS: "REQUESTS", // Service Requests
+    VENDORS: "VENDORS", // Vendor Management
+    SERVICE_LOGS: "SERVICE_LOGS", // Service Logs
     PROFILE: "PROFILE",
     REPORTS_ORG: "REPORTS_ORG",
     REPORTS_BRANCH: "REPORTS_BRANCH",
@@ -91,6 +95,8 @@ export const PERMISSION_MATRIX: Record<Role, Record<Module, ModulePermission>> =
         [MODULES.INVENTORY]: { level: "FULL", actions: ["VIEW", "CREATE", "UPDATE", "DELETE"] },
         [MODULES.ASSIGNMENTS]: { level: "FULL", actions: ["VIEW", "CREATE", "UPDATE", "DELETE"] },
         [MODULES.REQUESTS]: { level: "OWN", actions: ["VIEW", "CREATE", "UPDATE", "DELETE"] },
+        [MODULES.VENDORS]: { level: "FULL", actions: ["VIEW", "CREATE", "UPDATE", "DELETE"] },
+        [MODULES.SERVICE_LOGS]: { level: "FULL", actions: ["VIEW", "CREATE", "UPDATE", "DELETE"] },
         [MODULES.PROFILE]: { level: "FULL", actions: ["VIEW", "UPDATE"] },
         [MODULES.REPORTS_ORG]: { level: "FULL", actions: ["VIEW"] },
         [MODULES.REPORTS_BRANCH]: { level: "FULL", actions: ["VIEW"] },
@@ -106,6 +112,8 @@ export const PERMISSION_MATRIX: Record<Role, Record<Module, ModulePermission>> =
         [MODULES.INVENTORY]: { level: "OWN_ORG", actions: ["VIEW", "CREATE", "UPDATE", "DELETE"] },
         [MODULES.ASSIGNMENTS]: { level: "FULL", actions: ["VIEW", "CREATE", "UPDATE", "DELETE"] },
         [MODULES.REQUESTS]: { level: "OWN", actions: ["VIEW", "CREATE", "UPDATE", "DELETE"] },
+        [MODULES.VENDORS]: { level: "OWN_ORG", actions: ["VIEW", "CREATE", "UPDATE", "DELETE"] },
+        [MODULES.SERVICE_LOGS]: { level: "OWN_ORG", actions: ["VIEW", "CREATE", "UPDATE", "DELETE"] },
         [MODULES.PROFILE]: { level: "FULL", actions: ["VIEW", "UPDATE"] },
         [MODULES.REPORTS_ORG]: { level: "FULL", actions: ["VIEW"] },
         [MODULES.REPORTS_BRANCH]: { level: "FULL", actions: ["VIEW"] },
@@ -121,6 +129,8 @@ export const PERMISSION_MATRIX: Record<Role, Record<Module, ModulePermission>> =
         [MODULES.INVENTORY]: { level: "OWN_BRANCH", actions: ["VIEW", "CREATE", "UPDATE"] },
         [MODULES.ASSIGNMENTS]: { level: "FULL", actions: ["VIEW", "CREATE", "UPDATE", "DELETE"] },
         [MODULES.REQUESTS]: { level: "OWN", actions: ["VIEW", "CREATE", "UPDATE", "DELETE"] },
+        [MODULES.VENDORS]: { level: "OWN_ORG", actions: ["VIEW", "CREATE", "UPDATE"] },
+        [MODULES.SERVICE_LOGS]: { level: "OWN_BRANCH", actions: ["VIEW", "CREATE", "UPDATE"] },
         [MODULES.PROFILE]: { level: "FULL", actions: ["VIEW", "UPDATE"] },
         [MODULES.REPORTS_ORG]: { level: "NONE", actions: [] },
         [MODULES.REPORTS_BRANCH]: { level: "FULL", actions: ["VIEW"] },
@@ -136,6 +146,8 @@ export const PERMISSION_MATRIX: Record<Role, Record<Module, ModulePermission>> =
         [MODULES.INVENTORY]: { level: "OWN_BRANCH", actions: ["VIEW", "CREATE", "UPDATE"] },
         [MODULES.ASSIGNMENTS]: { level: "FULL", actions: ["VIEW", "CREATE", "UPDATE", "DELETE"] },
         [MODULES.REQUESTS]: { level: "FULL", actions: ["VIEW", "CREATE", "UPDATE", "DELETE"] },
+        [MODULES.VENDORS]: { level: "OWN_ORG", actions: ["VIEW", "CREATE", "UPDATE"] },
+        [MODULES.SERVICE_LOGS]: { level: "OWN_BRANCH", actions: ["VIEW", "CREATE", "UPDATE"] },
         [MODULES.PROFILE]: { level: "FULL", actions: ["VIEW", "UPDATE"] },
         [MODULES.REPORTS_ORG]: { level: "NONE", actions: [] },
         [MODULES.REPORTS_BRANCH]: { level: "VIEW_ONLY", actions: ["VIEW"] },
@@ -151,6 +163,8 @@ export const PERMISSION_MATRIX: Record<Role, Record<Module, ModulePermission>> =
         [MODULES.INVENTORY]: { level: "NONE", actions: [] },
         [MODULES.ASSIGNMENTS]: { level: "NONE", actions: [] },
         [MODULES.REQUESTS]: { level: "FULL", actions: ["VIEW", "CREATE", "UPDATE", "DELETE"] },
+        [MODULES.VENDORS]: { level: "VIEW_ONLY", actions: ["VIEW"] },
+        [MODULES.SERVICE_LOGS]: { level: "OWN", actions: ["VIEW", "CREATE", "UPDATE"] },
         [MODULES.PROFILE]: { level: "FULL", actions: ["VIEW", "UPDATE"] },
         [MODULES.REPORTS_ORG]: { level: "NONE", actions: [] },
         [MODULES.REPORTS_BRANCH]: { level: "VIEW_ONLY", actions: ["VIEW"] },
@@ -166,6 +180,8 @@ export const PERMISSION_MATRIX: Record<Role, Record<Module, ModulePermission>> =
         [MODULES.INVENTORY]: { level: "NONE", actions: [] },
         [MODULES.ASSIGNMENTS]: { level: "VIEW_ONLY", actions: ["VIEW"] }, // Can view own assignments
         [MODULES.REQUESTS]: { level: "OWN", actions: ["VIEW", "CREATE"] }, // Can only create and view own requests
+        [MODULES.VENDORS]: { level: "NONE", actions: [] },
+        [MODULES.SERVICE_LOGS]: { level: "NONE", actions: [] },
         [MODULES.PROFILE]: { level: "FULL", actions: ["VIEW", "UPDATE"] },
         [MODULES.REPORTS_ORG]: { level: "NONE", actions: [] },
         [MODULES.REPORTS_BRANCH]: { level: "NONE", actions: [] },
@@ -238,6 +254,18 @@ export const NAV_ITEMS: NavItem[] = [
         href: "/requests",
         icon: ClipboardCheck,
         module: MODULES.REQUESTS,
+    },
+    {
+        title: "Vendors",
+        href: "/vendors",
+        icon: Truck,
+        module: MODULES.VENDORS,
+    },
+    {
+        title: "Service Logs",
+        href: "/service-logs",
+        icon: Wrench,
+        module: MODULES.SERVICE_LOGS,
     },
     {
         title: "Settings",
