@@ -592,3 +592,236 @@ export interface ImportRecord {
 export interface UndoImportResult {
     message: string;
 }
+
+// =============================================================================
+// VENDOR TYPES
+// =============================================================================
+
+export type VendorType = "SUPPLIER" | "SERVICE_PROVIDER";
+export type VendorStatus = "ACTIVE" | "INACTIVE";
+export type VendorCategory =
+    | "IT_HARDWARE"
+    | "HVAC"
+    | "ELECTRICAL"
+    | "PLUMBING"
+    | "OFFICE_SUPPLIES"
+    | "FURNITURE"
+    | "SECURITY"
+    | "ELECTRONICS"
+    | "MACHINERY"
+    | "VEHICLES"
+    | "CLEANING"
+    | "GENERAL_MAINTENANCE"
+    | "OTHER";
+
+export type PaymentTerms =
+    | "IMMEDIATE"
+    | "NET_7"
+    | "NET_15"
+    | "NET_30"
+    | "NET_45"
+    | "NET_60"
+    | "ADVANCE"
+    | "CUSTOM";
+
+export interface Vendor {
+    id: string;
+    organizationId: string;
+    name: string;
+    vendorType: VendorType;
+    category: VendorCategory;
+    code?: string;
+    contactPerson: string;
+    email: string;
+    phone: string;
+    alternatePhone?: string;
+    website?: string;
+    addressLine1?: string;
+    addressLine2?: string;
+    city?: string;
+    state?: string;
+    postalCode?: string;
+    country?: string;
+    gstNumber?: string;
+    panNumber?: string;
+    registrationNumber?: string;
+    paymentTerms?: PaymentTerms;
+    bankName?: string;
+    bankAccountNumber?: string;
+    bankIfscCode?: string;
+    bankBranch?: string;
+    status: VendorStatus;
+    notes?: string;
+    rating?: number;
+    createdBy?: string;
+    updatedBy?: string;
+    createdAt: string;
+    updatedAt: string;
+    deletedAt?: string | null;
+    organization?: Organization;
+}
+
+export interface CreateVendorInput {
+    organizationId?: string;
+    name: string;
+    vendorType: VendorType;
+    category: VendorCategory;
+    contactPerson: string;
+    email: string;
+    phone: string;
+    alternatePhone?: string;
+    website?: string;
+    addressLine1?: string;
+    addressLine2?: string;
+    city?: string;
+    state?: string;
+    postalCode?: string;
+    country?: string;
+    gstNumber?: string;
+    panNumber?: string;
+    registrationNumber?: string;
+    paymentTerms?: PaymentTerms;
+    bankName?: string;
+    bankAccountNumber?: string;
+    bankIfscCode?: string;
+    bankBranch?: string;
+    notes?: string;
+}
+
+export interface UpdateVendorInput {
+    name?: string;
+    category?: VendorCategory;
+    contactPerson?: string;
+    email?: string;
+    phone?: string;
+    alternatePhone?: string;
+    website?: string;
+    addressLine1?: string;
+    addressLine2?: string;
+    city?: string;
+    state?: string;
+    postalCode?: string;
+    country?: string;
+    gstNumber?: string;
+    panNumber?: string;
+    registrationNumber?: string;
+    paymentTerms?: PaymentTerms;
+    bankName?: string;
+    bankAccountNumber?: string;
+    bankIfscCode?: string;
+    bankBranch?: string;
+    notes?: string;
+    rating?: number;
+    status?: VendorStatus;
+}
+
+export interface GetVendorsParams {
+    organizationId?: string;
+    search?: string;
+    type?: VendorType;
+    category?: VendorCategory;
+    status?: VendorStatus;
+    page?: number;
+    limit?: number;
+}
+
+export interface VendorsResponse {
+    data: Vendor[];
+    meta: PaginatedMeta;
+}
+
+export interface VendorStats {
+    totalSuppliedItems: number;
+    totalServices: number;
+    totalServiceCost: number;
+    totalInventoryCostEst: number;
+}
+
+// =============================================================================
+// SERVICE LOG TYPES
+// =============================================================================
+
+export type ServiceLogStatus = "SCHEDULED" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED";
+
+export interface ServiceLog {
+    id: string;
+    organizationId: string;
+    branchId: string;
+    vendorId: string;
+    inventoryItemId?: string;
+    requestId?: string;
+    serviceType: string;
+    title: string;
+    description?: string;
+    performedBy: string;
+    scheduledDate?: string;
+    startedAt?: string;
+    completedAt?: string;
+    laborCost?: number;
+    partsCost?: number;
+    totalCost?: number;
+    invoiceNumber?: string;
+    invoiceDate?: string;
+    attachments?: string[];
+    status: ServiceLogStatus;
+    notes?: string;
+    createdBy?: string;
+    updatedBy?: string;
+    createdAt: string;
+    updatedAt: string;
+    vendor?: Vendor;
+    inventoryItem?: InventoryItem;
+    request?: AssetRequest;
+    branch?: Branch;
+}
+
+export interface CreateServiceLogInput {
+    organizationId?: string;
+    branchId: string;
+    vendorId: string;
+    inventoryItemId?: string;
+    requestId?: string;
+    serviceType: string;
+    title: string;
+    description?: string;
+    performedBy: string;
+    scheduledDate?: string;
+    laborCost?: number;
+    partsCost?: number;
+    invoiceNumber?: string;
+    invoiceDate?: string;
+    notes?: string;
+    status?: ServiceLogStatus;
+    completedAt?: string;
+}
+
+export interface UpdateServiceLogInput {
+    serviceType?: string;
+    title?: string;
+    description?: string;
+    performedBy?: string;
+    scheduledDate?: string;
+    startedAt?: string;
+    completedAt?: string;
+    laborCost?: number;
+    partsCost?: number;
+    invoiceNumber?: string;
+    invoiceDate?: string;
+    notes?: string;
+    status?: ServiceLogStatus;
+}
+
+export interface GetServiceLogsParams {
+    organizationId?: string;
+    branchId?: string;
+    vendorId?: string;
+    inventoryItemId?: string;
+    status?: ServiceLogStatus;
+    page?: number;
+    limit?: number;
+}
+
+export interface ServiceLogsResponse {
+    data: ServiceLog[];
+    meta: PaginatedMeta;
+}
