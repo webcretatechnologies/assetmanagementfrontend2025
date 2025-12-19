@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Warehouse, Plus, ArrowRightLeft, Search, Upload, Download, Loader2, History, RotateCcw } from "lucide-react";
+import { Warehouse, Plus, ArrowRightLeft, Search, Upload, Download, Loader2, History, RotateCcw, MoreHorizontal, Eye, Pencil } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -28,6 +28,12 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { fetchInventory, clearInventory } from "@/store/slices/inventorySlice";
 import { fetchOrganizations } from "@/store/slices/organizationSlice";
@@ -40,6 +46,8 @@ import { TransferInventoryDialog } from "@/components/inventory/transfer-invento
 import { ImportInventoryDialog } from "@/components/inventory/import-inventory-dialog";
 import { ImportHistoryDialog } from "@/components/inventory/import-history-dialog";
 import { RestoreInventoryDialog } from "@/components/inventory/restore-inventory-dialog";
+import { EditInventoryDialog } from "@/components/inventory/edit-inventory-dialog";
+import { ViewInventoryDialog } from "@/components/inventory/view-inventory-dialog";
 import { exportInventory } from "@/lib/api/inventory";
 import { setIsExporting } from "@/store/slices/inventorySlice";
 import type { InventoryStatus, InventoryItem } from "@/lib/types";
@@ -78,6 +86,12 @@ export default function InventoryPage() {
     // Restore dialog state
     const [restoreDialogOpen, setRestoreDialogOpen] = useState(false);
     const [itemToRestore, setItemToRestore] = useState<InventoryItem | null>(null);
+    // Edit dialog state
+    const [editDialogOpen, setEditDialogOpen] = useState(false);
+    const [itemToEdit, setItemToEdit] = useState<InventoryItem | null>(null);
+    // View dialog state
+    const [viewDialogOpen, setViewDialogOpen] = useState(false);
+    const [itemToView, setItemToView] = useState<InventoryItem | null>(null);
 
     const userRole = user?.role;
     const isScopedUser = isInventoryOperator(userRole) || isBranchManager(userRole);
@@ -353,9 +367,7 @@ export default function InventoryPage() {
                                                     <TableHead className="text-right">Quantity</TableHead>
                                                     <TableHead>Warranty Expiry</TableHead>
                                                     <TableHead>Status</TableHead>
-                                                    {hasWrittenOffItems && (
-                                                        <TableHead className="text-right">Actions</TableHead>
-                                                    )}
+                                                    <TableHead className="text-right">Actions</TableHead>
                                                 </TableRow>
                                             </TableHeader>
                                             <TableBody>
@@ -403,23 +415,46 @@ export default function InventoryPage() {
                                                                 {item.status === "WRITTEN_OFF" ? "Written Off" : item.status}
                                                             </Badge>
                                                         </TableCell>
-                                                        {hasWrittenOffItems && (
-                                                            <TableCell className="text-right">
-                                                                {item.status === "WRITTEN_OFF" && (
-                                                                    <Button
-                                                                        variant="outline"
-                                                                        size="sm"
+                                                        <TableCell className="text-right">
+                                                            <DropdownMenu>
+                                                                <DropdownMenuTrigger asChild>
+                                                                    <Button variant="ghost" size="sm">
+                                                                        <MoreHorizontal className="h-4 w-4" />
+                                                                    </Button>
+                                                                </DropdownMenuTrigger>
+                                                                <DropdownMenuContent align="end">
+                                                                    <DropdownMenuItem
                                                                         onClick={() => {
-                                                                            setItemToRestore(item);
-                                                                            setRestoreDialogOpen(true);
+                                                                            setItemToView(item);
+                                                                            setViewDialogOpen(true);
                                                                         }}
                                                                     >
-                                                                        <RotateCcw className="mr-1 h-4 w-4" />
-                                                                        Restore
-                                                                    </Button>
-                                                                )}
-                                                            </TableCell>
-                                                        )}
+                                                                        <Eye className="mr-2 h-4 w-4" />
+                                                                        View Details
+                                                                    </DropdownMenuItem>
+                                                                    <DropdownMenuItem
+                                                                        onClick={() => {
+                                                                            setItemToEdit(item);
+                                                                            setEditDialogOpen(true);
+                                                                        }}
+                                                                    >
+                                                                        <Pencil className="mr-2 h-4 w-4" />
+                                                                        Edit
+                                                                    </DropdownMenuItem>
+                                                                    {item.status === "WRITTEN_OFF" && (
+                                                                        <DropdownMenuItem
+                                                                            onClick={() => {
+                                                                                setItemToRestore(item);
+                                                                                setRestoreDialogOpen(true);
+                                                                            }}
+                                                                        >
+                                                                            <RotateCcw className="mr-2 h-4 w-4" />
+                                                                            Restore
+                                                                        </DropdownMenuItem>
+                                                                    )}
+                                                                </DropdownMenuContent>
+                                                            </DropdownMenu>
+                                                        </TableCell>
                                                     </TableRow>
                                                 ))}
                                             </TableBody>
@@ -463,6 +498,26 @@ export default function InventoryPage() {
                 open={restoreDialogOpen}
                 onOpenChange={setRestoreDialogOpen}
                 onSuccess={refreshInventory}
+            />
+
+            {/* Edit Dialog */}
+            <EditInventoryDialog
+                item={itemToEdit}
+                open={editDialogOpen}
+                onOpenChange={setEditDialogOpen}
+                onSuccess={refreshInventory}
+            />
+
+            {/* View Dialog */}
+            <ViewInventoryDialog
+                item={itemToView}
+                open={viewDialogOpen}
+                onOpenChange={setViewDialogOpen}
+                onEdit={() => {
+                    setViewDialogOpen(false);
+                    setItemToEdit(itemToView);
+                    setEditDialogOpen(true);
+                }}
             />
         </ProtectedPage>
     );

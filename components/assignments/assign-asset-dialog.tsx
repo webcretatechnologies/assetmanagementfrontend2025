@@ -156,72 +156,75 @@ export function AssignAssetDialog({
             <DialogTrigger asChild>
                 {trigger || <Button>Assign Asset</Button>}
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[550px] max-h-[90vh] overflow-y-auto">
+            <DialogContent className="sm:max-w-[1000px] max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                     <DialogTitle>Assign Asset</DialogTitle>
                     <DialogDescription>Assign an available asset to a user.</DialogDescription>
                 </DialogHeader>
                 <form onSubmit={handleSubmit(onSubmit)}>
                     <div className="grid gap-4 py-4">
-                        {/* Organization */}
-                        <div className="space-y-2">
-                            <Label>Organization *</Label>
-                            <Select value={selectedOrgId} onValueChange={setSelectedOrgId}>
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Select organization" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {organizations
-                                        .filter((org) => org.status === "ACTIVE")
-                                        .map((org) => (
-                                            <SelectItem key={org.id} value={org.id}>
-                                                {org.name}
+                        {/* Organization, Branch, Assign To - 3 column grid */}
+                        <div className="grid gap-4 sm:grid-cols-3">
+                            {/* Organization */}
+                            <div className="space-y-2">
+                                <Label>Organization *</Label>
+                                <Select value={selectedOrgId} onValueChange={setSelectedOrgId}>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select organization" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {organizations
+                                            .filter((org) => org.status === "ACTIVE")
+                                            .map((org) => (
+                                                <SelectItem key={org.id} value={org.id}>
+                                                    {org.name}
+                                                </SelectItem>
+                                            ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
+                            {/* Branch */}
+                            <div className="space-y-2">
+                                <Label>Branch *</Label>
+                                <Select
+                                    value={selectedBranchId}
+                                    onValueChange={setSelectedBranchId}
+                                    disabled={!selectedOrgId}
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select branch" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {activeBranches.map((branch) => (
+                                            <SelectItem key={branch.id} value={branch.id}>
+                                                {branch.name}
                                             </SelectItem>
                                         ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
+                                    </SelectContent>
+                                </Select>
+                            </div>
 
-                        {/* Branch */}
-                        <div className="space-y-2">
-                            <Label>Branch *</Label>
-                            <Select
-                                value={selectedBranchId}
-                                onValueChange={setSelectedBranchId}
-                                disabled={!selectedOrgId}
-                            >
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Select branch" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {activeBranches.map((branch) => (
-                                        <SelectItem key={branch.id} value={branch.id}>
-                                            {branch.name}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-
-                        {/* User */}
-                        <div className="space-y-2">
-                            <Label>Assign To *</Label>
-                            <Select
-                                value={selectedUserId}
-                                onValueChange={setSelectedUserId}
-                                disabled={!selectedOrgId}
-                            >
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Select user" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {activeUsers.map((user) => (
-                                        <SelectItem key={user.id} value={user.id}>
-                                            {user.firstName} {user.lastName} ({user.email})
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
+                            {/* User / Assign To */}
+                            <div className="space-y-2">
+                                <Label>Assign To *</Label>
+                                <Select
+                                    value={selectedUserId}
+                                    onValueChange={setSelectedUserId}
+                                    disabled={!selectedOrgId}
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select user" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {activeUsers.map((user) => (
+                                            <SelectItem key={user.id} value={user.id}>
+                                                {user.firstName} {user.lastName} ({user.email})
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
                         </div>
 
                         {/* Asset */}
@@ -350,6 +353,6 @@ export function AssignAssetDialog({
                     </DialogFooter>
                 </form>
             </DialogContent>
-        </Dialog>
+        </Dialog >
     );
 }

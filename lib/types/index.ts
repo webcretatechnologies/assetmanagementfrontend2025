@@ -417,8 +417,12 @@ export interface InventoryItem {
     product?: Product;
     branch?: Branch;
     serialNumber?: string;
+    barcode?: string;
     quantity: number;
     status: InventoryStatus;
+    purchaseDate?: string;
+    vendorId?: string;
+    vendor?: Vendor;
     // Service fields
     requiresService?: boolean;
     serviceFrequency?: ServiceFrequency;
@@ -460,8 +464,24 @@ export interface AddInventoryInput {
     hasInvoice?: boolean;
     invoiceNumber?: string;
     invoiceDate?: string;
+    vendorId?: string;
     vendorName?: string;
     currency?: string;
+}
+
+export interface UpdateInventoryInput {
+    serialNumber?: string;
+    barcode?: string;
+    purchaseDate?: string;
+    vendorId?: string;
+    requiresService?: boolean;
+    serviceFrequency?: ServiceFrequency;
+    serviceInstructions?: string;
+    hasWarranty?: boolean;
+    warrantyProvider?: string;
+    warrantyExpiryDate?: string;
+    hasGuarantee?: boolean;
+    guaranteeExpiryDate?: string;
 }
 
 export interface TransferInventoryInput {
