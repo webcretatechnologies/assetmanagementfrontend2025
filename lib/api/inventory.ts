@@ -5,6 +5,7 @@ import type {
     InventoryItem,
     InventoryResponse,
     AddInventoryInput,
+    UpdateInventoryInput,
     TransferInventoryInput,
     GetInventoryParams,
     TransferResult,
@@ -50,6 +51,16 @@ export async function getInventory(params: GetInventoryParams): Promise<Inventor
             totalPages: meta.totalPages ?? meta.lastPage ?? 1
         }
     };
+}
+
+export async function getInventoryById(id: string): Promise<InventoryItem> {
+    const res = await api.get<InventoryItem>(`/inventory/${id}`);
+    return res.data;
+}
+
+export async function updateInventory(id: string, data: UpdateInventoryInput): Promise<InventoryItem> {
+    const res = await api.patch<InventoryItem>(`/inventory/${id}`, data);
+    return res.data;
 }
 
 export async function addInventory(data: AddInventoryInput): Promise<InventoryItem[]> {

@@ -1,7 +1,9 @@
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import {
     getInventory,
-    addInventory as addInventoryApi,
+    getInventoryById,
+    updateInventory,
+    addInventoryWithInvoice,
     transferInventory as transferInventoryApi,
     importInventory as importInventoryApi,
     getRecentImports,
@@ -11,6 +13,7 @@ import type {
     InventoryItem,
     InventoryResponse,
     AddInventoryInput,
+    UpdateInventoryInput,
     TransferInventoryInput,
     GetInventoryParams,
     ImportInventoryResult,
@@ -38,6 +41,8 @@ interface InventoryState {
     recentImports: ImportRecord[];
     isLoadingHistory: boolean;
     isUndoing: boolean;
+    // Update state
+    isUpdating: boolean;
 }
 
 const initialState: InventoryState = {
@@ -56,6 +61,8 @@ const initialState: InventoryState = {
     recentImports: [],
     isLoadingHistory: false,
     isUndoing: false,
+    // Update state
+    isUpdating: false,
 };
 
 export const fetchInventory = createAsyncThunk(
@@ -71,14 +78,40 @@ export const fetchInventory = createAsyncThunk(
     }
 );
 
+export const fetchInventoryById = createAsyncThunk(
+    "inventory/fetchById",
+    async (id: string, { rejectWithValue }) => {
+        try {
+            return await getInventoryById(id);
+        } catch (error) {
+            return rejectWithValue(
+                error instanceof Error ? error.message : "Failed to fetch inventory item"
+            );
+        }
+    }
+);
+
 export const addInventory = createAsyncThunk(
     "inventory/add",
-    async (data: AddInventoryInput, { rejectWithValue }) => {
+    async ({ data, invoiceFile }: { data: AddInventoryInput; invoiceFile?: File }, { rejectWithValue }) => {
         try {
-            return await addInventoryApi(data);
+            return await addInventoryWithInvoice(data, invoiceFile);
         } catch (error) {
             return rejectWithValue(
                 error instanceof Error ? error.message : "Failed to add inventory"
+            );
+        }
+    }
+);
+
+export const updateInventoryItem = createAsyncThunk(
+    "inventory/update",
+    async ({ id, data }: { id: string; data: UpdateInventoryInput }, { rejectWithValue }) => {
+        try {
+            return await updateInventory(id, data);
+        } catch (error) {
+            return rejectWithValue(
+                error instanceof Error ? error.message : "Failed to update inventory item"
             );
         }
     }
@@ -240,6 +273,37 @@ const inventorySlice = createSlice({
             })
             .addCase(undoImportThunk.rejected, (state) => {
                 state.isUndoing = false;
+            })
+            // Fetch single item cases
+            .addCase(fetchInventoryById.pending, (state) => {
+                state.isLoading = true;
+                state.error = null;
+            })
+            .addCase(fetchInventoryById.fulfilled, (state, action: PayloadAction<InventoryItem>) => {
+                state.isLoading = false;
+                state.selectedItem = action.payload;
+            })
+            .addCase(fetchInventoryById.rejected, (state, action) => {
+                state.isLoading = false;
+                state.error = action.payload as string;
+            })
+            // Update item cases
+            .addCase(updateInventoryItem.pending, (state) => {
+                state.isUpdating = true;
+                state.error = null;
+            })
+            .addCase(updateInventoryItem.fulfilled, (state, action: PayloadAction<InventoryItem>) => {
+                state.isUpdating = false;
+                state.selectedItem = action.payload;
+                // Update item in the list if present
+                const index = state.items.findIndex(item => item.id === action.payload.id);
+                if (index !== -1) {
+                    state.items[index] = action.payload;
+                }
+            })
+            .addCase(updateInventoryItem.rejected, (state, action) => {
+                state.isUpdating = false;
+                state.error = action.payload as string;
             });
     },
 });

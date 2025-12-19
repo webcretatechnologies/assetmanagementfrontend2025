@@ -165,23 +165,25 @@ export function RestoreInventoryDialog({
 
         const result = await dispatch(
             addInventory({
-                organizationId: item.organizationId,
-                branchId: item.branchId,
-                productId: item.productId,
-                quantity: quantity,
-                serialNumbers: serialNumbersArray,
-                purchaseDate: purchaseDate || undefined,
-                // Service fields
-                requiresService: requiresService,
-                serviceFrequency: requiresService ? serviceFrequency : undefined,
-                serviceInstructions: requiresService ? serviceInstructions : undefined,
-                // Warranty fields
-                hasWarranty: hasWarranty,
-                warrantyProvider: hasWarranty ? warrantyProvider : undefined,
-                warrantyDurationMonths: hasWarranty ? warrantyDurationMonths : undefined,
-                // Guarantee fields
-                hasGuarantee: hasGuarantee,
-                guaranteeDurationMonths: hasGuarantee ? guaranteeDurationMonths : undefined,
+                data: {
+                    organizationId: item.organizationId,
+                    branchId: item.branchId,
+                    productId: item.productId,
+                    quantity: quantity,
+                    serialNumbers: serialNumbersArray,
+                    purchaseDate: purchaseDate || undefined,
+                    // Service fields
+                    requiresService: requiresService,
+                    serviceFrequency: requiresService ? serviceFrequency : undefined,
+                    serviceInstructions: requiresService ? serviceInstructions : undefined,
+                    // Warranty fields
+                    hasWarranty: hasWarranty,
+                    warrantyProvider: hasWarranty ? warrantyProvider : undefined,
+                    warrantyDurationMonths: hasWarranty ? warrantyDurationMonths : undefined,
+                    // Guarantee fields
+                    hasGuarantee: hasGuarantee,
+                    guaranteeDurationMonths: hasGuarantee ? guaranteeDurationMonths : undefined,
+                }
             })
         );
 

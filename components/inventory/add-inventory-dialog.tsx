@@ -30,7 +30,8 @@ import { fetchOrganizations } from "@/store/slices/organizationSlice";
 import { fetchBranchesByOrg } from "@/store/slices/branchSlice";
 import { fetchProducts } from "@/store/slices/productSlice";
 import { isSuperAdmin } from "@/lib/rbac";
-import type { AddInventoryInput, ServiceFrequency } from "@/lib/types";
+import { getSuppliers } from "@/lib/api/vendors";
+import type { AddInventoryInput, ServiceFrequency, Vendor } from "@/lib/types";
 
 const serviceFrequencies: { value: ServiceFrequency; label: string }[] = [
     { value: "NONE", label: "None" },
@@ -68,6 +69,11 @@ export function AddInventoryDialog({
     const [hasInvoice, setHasInvoice] = useState(false);
     const [invoiceFile, setInvoiceFile] = useState<File | null>(null);
     const invoiceFileRef = useRef<HTMLInputElement>(null);
+    // Vendor selection state
+    const [vendors, setVendors] = useState<Vendor[]>([]);
+    const [isLoadingVendors, setIsLoadingVendors] = useState(false);
+    const [selectedVendorId, setSelectedVendorId] = useState<string>("");
+    const [showVendorTextInput, setShowVendorTextInput] = useState(false);
 
     const dispatch = useAppDispatch();
     const { isLoading } = useAppSelector((state) => state.inventory);
@@ -104,6 +110,17 @@ export function AddInventoryDialog({
             dispatch(fetchProducts({ organizationId: selectedOrgId, page: 1, limit: 100 }));
         }
     }, [selectedOrgId, dispatch]);
+
+    // Fetch vendors when invoice checkbox is checked
+    useEffect(() => {
+        if (hasInvoice && selectedOrgId && vendors.length === 0) {
+            setIsLoadingVendors(true);
+            getSuppliers(selectedOrgId)
+                .then(setVendors)
+                .catch(() => console.error("Failed to load vendors"))
+                .finally(() => setIsLoadingVendors(false));
+        }
+    }, [hasInvoice, selectedOrgId, vendors.length]);
 
     const {
         register,
@@ -181,11 +198,12 @@ export function AddInventoryDialog({
             hasInvoice: hasInvoice,
             invoiceNumber: hasInvoice ? data.invoiceNumber : undefined,
             invoiceDate: hasInvoice ? data.invoiceDate : undefined,
-            vendorName: hasInvoice ? data.vendorName : undefined,
+            vendorId: hasInvoice && selectedVendorId && selectedVendorId !== "other" ? selectedVendorId : undefined,
+            vendorName: hasInvoice && showVendorTextInput ? data.vendorName : undefined,
             currency: hasInvoice ? data.currency : undefined,
         };
 
-        const result = await dispatch(addInventory(payload));
+        const result = await dispatch(addInventory({ data: payload, invoiceFile: invoiceFile || undefined }));
         if (addInventory.fulfilled.match(result)) {
             reset();
             setSelectedProductId("");
@@ -196,6 +214,8 @@ export function AddInventoryDialog({
             setPurchaseDate("");
             setHasInvoice(false);
             setInvoiceFile(null);
+            setSelectedVendorId("");
+            setShowVendorTextInput(false);
             if (invoiceFileRef.current) {
                 invoiceFileRef.current.value = "";
             }
@@ -212,7 +232,7 @@ export function AddInventoryDialog({
             <DialogTrigger asChild>
                 {trigger || <Button>Add Stock</Button>}
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[500px]">
+            <DialogContent className="sm:max-w-[1000px] max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                     <DialogTitle>Add Inventory Stock</DialogTitle>
                     <DialogDescription>
@@ -221,101 +241,108 @@ export function AddInventoryDialog({
                 </DialogHeader>
                 <form onSubmit={handleSubmit(onSubmit)}>
                     <div className="grid gap-4 py-4">
-                        {/* Organization */}
-                        {canSelectOrg && (
+                        {/* Organization, Branch, Product - Side by Side */}
+                        <div className={`grid gap-4 ${canSelectOrg ? "sm:grid-cols-3" : "sm:grid-cols-2"}`}>
+                            {/* Organization */}
+                            {canSelectOrg && (
+                                <div className="space-y-2">
+                                    <Label>Organization *</Label>
+                                    <Select
+                                        value={selectedOrgId}
+                                        onValueChange={setSelectedOrgId}
+                                        disabled={!!defaultOrgId}
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select organization" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {orgList.map((org) => (
+                                                <SelectItem key={org.id} value={org.id}>
+                                                    {org.name}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            )}
+
+                            {/* Branch */}
                             <div className="space-y-2">
-                                <Label>Organization *</Label>
+                                <Label>Branch *</Label>
                                 <Select
-                                    value={selectedOrgId}
-                                    onValueChange={setSelectedOrgId}
-                                    disabled={!!defaultOrgId}
+                                    value={selectedBranchId}
+                                    onValueChange={setSelectedBranchId}
+                                    disabled={!selectedOrgId || !!defaultBranchId}
                                 >
                                     <SelectTrigger>
-                                        <SelectValue placeholder="Select organization" />
+                                        <SelectValue placeholder="Select branch" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        {orgList.map((org) => (
-                                            <SelectItem key={org.id} value={org.id}>
-                                                {org.name}
+                                        {activeBranches.map((branch) => (
+                                            <SelectItem key={branch.id} value={branch.id}>
+                                                {branch.name}
                                             </SelectItem>
                                         ))}
                                     </SelectContent>
                                 </Select>
                             </div>
-                        )}
 
-                        {/* Branch */}
-                        <div className="space-y-2">
-                            <Label>Branch *</Label>
-                            <Select
-                                value={selectedBranchId}
-                                onValueChange={setSelectedBranchId}
-                                disabled={!selectedOrgId || !!defaultBranchId}
-                            >
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Select branch" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {activeBranches.map((branch) => (
-                                        <SelectItem key={branch.id} value={branch.id}>
-                                            {branch.name}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
+                            {/* Product */}
+                            <div className="space-y-2">
+                                <Label>Product *</Label>
+                                <Select
+                                    value={selectedProductId}
+                                    onValueChange={setSelectedProductId}
+                                    disabled={!selectedOrgId}
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select product" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {activeProducts.map((product) => (
+                                            <SelectItem key={product.id} value={product.id}>
+                                                {product.name} ({product.sku})
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
                         </div>
 
-                        {/* Product */}
-                        <div className="space-y-2">
-                            <Label>Product *</Label>
-                            <Select
-                                value={selectedProductId}
-                                onValueChange={setSelectedProductId}
-                                disabled={!selectedOrgId}
-                            >
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Select product" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {activeProducts.map((product) => (
-                                        <SelectItem key={product.id} value={product.id}>
-                                            {product.name} ({product.sku})
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
+                        {/* Quantity and Purchase Date Grid */}
+                        <div className="grid gap-4 sm:grid-cols-2">
+                            {/* Quantity */}
+                            <div className="space-y-2">
+                                <Label htmlFor="quantity">Quantity *</Label>
+                                <Input
+                                    id="quantity"
+                                    type="number"
+                                    min="1"
+                                    className="w-full text-center"
+                                    {...register("quantity", {
+                                        required: "Quantity is required",
+                                        min: { value: 1, message: "Minimum quantity is 1" },
+                                        valueAsNumber: true,
+                                    })}
+                                />
+                                {errors.quantity && (
+                                    <p className="text-xs text-destructive">{errors.quantity.message}</p>
+                                )}
+                            </div>
 
-                        {/* Quantity */}
-                        <div className="space-y-2">
-                            <Label htmlFor="quantity">Quantity *</Label>
-                            <Input
-                                id="quantity"
-                                type="number"
-                                min="1"
-                                {...register("quantity", {
-                                    required: "Quantity is required",
-                                    min: { value: 1, message: "Minimum quantity is 1" },
-                                    valueAsNumber: true,
-                                })}
-                            />
-                            {errors.quantity && (
-                                <p className="text-xs text-destructive">{errors.quantity.message}</p>
-                            )}
-                        </div>
-
-                        {/* Purchase Date */}
-                        <div className="space-y-2">
-                            <Label htmlFor="purchaseDate">Purchase Date</Label>
-                            <Input
-                                id="purchaseDate"
-                                type="date"
-                                value={purchaseDate}
-                                onChange={(e) => setPurchaseDate(e.target.value)}
-                            />
-                            <p className="text-xs text-muted-foreground">
-                                Warranty/Guarantee expiry will be calculated from this date
-                            </p>
+                            {/* Purchase Date */}
+                            <div className="space-y-2">
+                                <Label htmlFor="purchaseDate">Purchase Date</Label>
+                                <Input
+                                    id="purchaseDate"
+                                    type="date"
+                                    value={purchaseDate}
+                                    onChange={(e) => setPurchaseDate(e.target.value)}
+                                />
+                                <p className="text-xs text-muted-foreground">
+                                    Used for warranty/guarantee expiry
+                                </p>
+                            </div>
                         </div>
 
                         {/* Serial Numbers (for serialized products) */}
@@ -493,18 +520,43 @@ export function AddInventoryDialog({
                                     </div>
                                     <div className="grid gap-4 sm:grid-cols-2">
                                         <div className="space-y-2">
-                                            <Label htmlFor="vendorName">Vendor Name</Label>
-                                            <Input
-                                                id="vendorName"
-                                                placeholder="Vendor Inc."
-                                                {...register("vendorName")}
-                                            />
+                                            <Label>Vendor</Label>
+                                            <Select
+                                                value={selectedVendorId}
+                                                onValueChange={(value) => {
+                                                    setSelectedVendorId(value);
+                                                    setShowVendorTextInput(value === "other");
+                                                }}
+                                                disabled={isLoadingVendors}
+                                            >
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder={isLoadingVendors ? "Loading..." : "Select vendor"} />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {vendors.map((vendor) => (
+                                                        <SelectItem key={vendor.id} value={vendor.id}>
+                                                            {vendor.name}
+                                                        </SelectItem>
+                                                    ))}
+                                                    <SelectItem value="other">Vendor not in list...</SelectItem>
+                                                </SelectContent>
+                                            </Select>
                                         </div>
+                                        {showVendorTextInput && (
+                                            <div className="space-y-2">
+                                                <Label htmlFor="vendorName">Vendor Name</Label>
+                                                <Input
+                                                    id="vendorName"
+                                                    placeholder="Enter vendor name"
+                                                    {...register("vendorName")}
+                                                />
+                                            </div>
+                                        )}
                                         <div className="space-y-2">
                                             <Label htmlFor="currency">Currency</Label>
                                             <Input
                                                 id="currency"
-                                                placeholder="USD"
+                                                placeholder="INR"
                                                 {...register("currency")}
                                             />
                                         </div>
@@ -575,6 +627,6 @@ export function AddInventoryDialog({
                     </DialogFooter>
                 </form>
             </DialogContent>
-        </Dialog>
+        </Dialog >
     );
 }
