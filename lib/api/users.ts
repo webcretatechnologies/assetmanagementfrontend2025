@@ -14,6 +14,7 @@ export interface GetUsersParams {
     search?: string;
     role?: string;
     status?: string;
+    branchId?: string;
 }
 
 // Backend response type - may use lastPage instead of totalPages
@@ -35,6 +36,7 @@ export async function getUsers(params?: GetUsersParams): Promise<UsersResponse> 
     if (params?.search) searchParams.set("search", params.search);
     if (params?.role) searchParams.set("role", params.role);
     if (params?.status) searchParams.set("status", params.status);
+    if (params?.branchId) searchParams.set("branchId", params.branchId);
 
     const res = await api.get<BackendUsersResponse | User[]>(`/users?${searchParams}`);
 
@@ -66,6 +68,7 @@ export async function getUsersByOrg(orgId: string, params?: GetUsersParams): Pro
     if (params?.search) searchParams.set("search", params.search);
     if (params?.role) searchParams.set("role", params.role);
     if (params?.status) searchParams.set("status", params.status);
+    if (params?.branchId) searchParams.set("branchId", params.branchId);
 
     const res = await api.get<BackendUsersResponse | User[]>(`/users/org/${orgId}?${searchParams}`);
 

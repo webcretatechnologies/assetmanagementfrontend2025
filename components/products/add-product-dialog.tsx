@@ -147,7 +147,7 @@ export function AddProductDialog({
             <DialogTrigger asChild>
                 {trigger || <Button>Add Product</Button>}
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+            <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                     <DialogTitle>Add Product</DialogTitle>
                     <DialogDescription>

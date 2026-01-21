@@ -3,6 +3,7 @@
 import { MobileSidebar } from "./mobile-sidebar";
 import { UserNav } from "./user-nav";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { NotificationsWidget } from "./notifications-widget";
 import { Package } from "lucide-react";
 
 export function Header() {
@@ -20,6 +21,7 @@ export function Header() {
             </div>
 
             <div className="flex items-center gap-2">
+                <NotificationsWidget />
                 <ThemeToggle />
                 <UserNav />
             </div>

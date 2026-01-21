@@ -4,6 +4,7 @@ import "./globals.css";
 import { ReduxProvider } from "@/store/provider";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
+import { MessagingProvider } from "@/lib/contexts/messaging-context";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -29,7 +30,9 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <ReduxProvider>{children}</ReduxProvider>
+          <ReduxProvider>
+            <MessagingProvider>{children}</MessagingProvider>
+          </ReduxProvider>
           <Toaster position="bottom-right" richColors closeButton />
         </ThemeProvider>
       </body>
