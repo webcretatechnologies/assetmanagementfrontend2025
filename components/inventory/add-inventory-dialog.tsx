@@ -232,7 +232,7 @@ export function AddInventoryDialog({
             <DialogTrigger asChild>
                 {trigger || <Button>Add Stock</Button>}
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[1000px] max-h-[90vh] overflow-y-auto">
+            <DialogContent className="sm:max-w-[1100px] max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                     <DialogTitle>Add Inventory Stock</DialogTitle>
                     <DialogDescription>

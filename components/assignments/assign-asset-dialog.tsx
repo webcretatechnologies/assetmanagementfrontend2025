@@ -75,9 +75,28 @@ export function AssignAssetDialog({
     useEffect(() => {
         if (selectedOrgId) {
             dispatch(fetchBranchesByOrg(selectedOrgId));
-            dispatch(fetchUsersByOrg({ orgId: selectedOrgId }));
         }
     }, [selectedOrgId, dispatch]);
+
+    // Fetch users when branch changes
+    useEffect(() => {
+        if (selectedOrgId && selectedBranchId) {
+            dispatch(fetchUsersByOrg({ orgId: selectedOrgId, branchId: selectedBranchId }));
+        } else if (selectedOrgId && !selectedBranchId) {
+            // Optional: Fetch all org users if no branch selected, or clear users?
+            // Requirement implies filtering by branch. If no branch, maybe show all or none.
+            // Existing logic showed all. Let's keep showing all if no branch selected yet?
+            // Actually, the requirement is "Assign To dropdown fills with only Tokyo employees" AFTER selection.
+            // Before selection, it might be empty or all.
+            // Let's safe default to fetching by org if no branch, but the prompt says
+            // "User selects Tokyo... dropdown fills". This implies it might wait.
+            // But to avoid breaking existing flow too much, let's just fetch when branch is selected.
+            // However, the previous code fetched immediately on Org selection.
+            // If we remove that, users will be empty until branch is picked.
+            // This seems correct per requirements "Assign To dropdown updates...".
+            // So I will REMOVE the user fetch from the org effect and ONLY do it here.
+        }
+    }, [selectedOrgId, selectedBranchId, dispatch]);
 
     // Reset selections when org changes (but not on initial mount)
     const [isInitialMount, setIsInitialMount] = useState(true);

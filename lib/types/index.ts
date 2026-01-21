@@ -845,3 +845,102 @@ export interface ServiceLogsResponse {
     data: ServiceLog[];
     meta: PaginatedMeta;
 }
+
+// =============================================================================
+// MESSAGING TYPES
+// =============================================================================
+
+export type MessageStatus = 'SENT' | 'DELIVERED' | 'READ';
+
+export interface Message {
+    id: string;
+    senderId: string;
+    receiverId: string;
+    content: string;
+    organizationId: string;
+    branchId: string;
+    isRead: boolean;
+    status?: MessageStatus;
+    sentAt: string;
+    editedAt?: string;
+    deletedAt?: string;
+    deletedForMe?: boolean;
+    sender?: {
+        id: string;
+        firstName: string;
+        lastName: string;
+        role: UserRole;
+        email?: string;
+    };
+    receiver?: {
+        id: string;
+        firstName: string;
+        lastName: string;
+        role: UserRole;
+        email?: string;
+    };
+}
+
+export interface SendMessagePayload {
+    receiverId: string;
+    content: string;
+}
+
+export interface EditMessagePayload {
+    messageId: string;
+    newContent: string;
+}
+
+export interface DeleteMessagePayload {
+    messageId: string;
+    forEveryone: boolean;
+}
+
+export interface MarkReadPayload {
+    messageId: string;
+}
+
+export interface NewMessageEvent {
+    id: string;
+    sender: {
+        id: string;
+        firstName: string;
+        lastName: string;
+        role: UserRole;
+        email?: string;
+    };
+    receiverId: string;
+    content: string;
+    branchId: string;
+    isRead: boolean;
+    sentAt: string;
+}
+
+export interface MessageEditedEvent {
+    id: string;
+    content: string;
+    editedAt: string;
+}
+
+export interface MessageDeletedEvent {
+    messageId: string;
+    forEveryone: boolean;
+}
+
+export interface MessageStatusEvent {
+    messageId: string;
+    status: MessageStatus;
+}
+
+export interface UserPresenceEvent {
+    userId: string;
+}
+
+export interface MessagingState {
+    isConnected: boolean;
+    messages: Message[];
+    activeUser: User | null; // The user we are currently chatting with
+    unreadCount: number;
+    onlineUsers: string[];
+}
+
